@@ -37,6 +37,8 @@ if mode == "管理者後台":
         st.info("尚無資料")
     st.stop()
 
+submitted_record = None
+
 with st.form("intake_form"):
     st.header("1️⃣ 基本資料")
     col1, col2, col3 = st.columns(3)
@@ -103,7 +105,7 @@ with st.form("intake_form"):
 
     submitted = st.form_submit_button("✅ 提交資料")
     if submitted:
-        record = {
+        submitted_record = {
             "日期": date.today(), "年齡": age, "性別": sex, "身高": height, "體重": weight, "BMI": round(bmi, 2),
             "教育程度": edu, "職業": job, "婚姻狀況": marital, "居住情形": living,
             "透析年資": dialysis_years, "CCI": cci, "藥物數量": med_count, "SBP": sbp, "DBP": dbp,
@@ -111,38 +113,41 @@ with st.form("intake_form"):
             "SMI": smi, "SMI分類": smi_status, "KCL得分": kcl_score, "KCL分類": kcl_status,
             "IPAQ MET": int(met), "IPAQ分類": ipaqlvl, "MNA-SF得分": mna_total, "MNA-SF分類": mna_status
         }
-        df = pd.DataFrame([record])
+        df = pd.DataFrame([submitted_record])
         df.to_csv(DATA_FILE, mode='a', index=False, header=not os.path.getsize(DATA_FILE))
         st.success("✅ 資料已成功儲存！")
+        st.session_state["latest_record"] = submitted_record
 
-        # ➕ 輸出個人報告 Excel
-        report_buffer = io.BytesIO()
-        df.to_excel(report_buffer, index=False, engine='openpyxl')
-        st.download_button(
-            label="⬇️ 下載此筆個人報告 (Excel)",
-            data=report_buffer.getvalue(),
-            file_name=f"個人報告_{date.today()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+# 表單外處理下載
+if "latest_record" in st.session_state:
+    latest = pd.DataFrame([st.session_state["latest_record"]])
 
-        # ➕ 輸出 PDF 報告
-        class PDF(FPDF):
-            def header(self):
-                self.set_font("Arial", 'B', 12)
-                self.cell(0, 10, "血液透析個人健康報告", ln=True, align="C")
-                self.ln(10)
+    report_buffer = io.BytesIO()
+    latest.to_excel(report_buffer, index=False, engine='openpyxl')
+    st.download_button(
+        label="⬇️ 下載此筆個人報告 (Excel)",
+        data=report_buffer.getvalue(),
+        file_name=f"個人報告_{date.today()}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-        pdf = PDF()
-        pdf.add_page()
-        pdf.set_font("Arial", '', 11)
-        for key, value in record.items():
-            pdf.cell(0, 10, f"{key}: {value}", ln=True)
+    class PDF(FPDF):
+        def header(self):
+            self.set_font("Arial", 'B', 12)
+            self.cell(0, 10, "血液透析個人健康報告", ln=True, align="C")
+            self.ln(10)
 
-        pdf_buffer = io.BytesIO()
-        pdf.output(pdf_buffer)
-        st.download_button(
-            label="⬇️ 下載此筆個人報告 (PDF)",
-            data=pdf_buffer.getvalue(),
-            file_name=f"個人報告_{date.today()}.pdf",
-            mime="application/pdf"
-        )
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_font("Arial", '', 11)
+    for key, value in st.session_state["latest_record"].items():
+        pdf.cell(0, 10, f"{key}: {value}", ln=True)
+
+    pdf_buffer = io.BytesIO()
+    pdf.output(pdf_buffer)
+    st.download_button(
+        label="⬇️ 下載此筆個人報告 (PDF)",
+        data=pdf_buffer.getvalue(),
+        file_name=f"個人報告_{date.today()}.pdf",
+        mime="application/pdf"
+    )
