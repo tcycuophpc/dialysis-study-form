@@ -16,7 +16,7 @@ mode = st.sidebar.selectbox("選擇頁面模式", ["使用者填寫", "管理者
 
 if mode == "管理者後台":
     password = st.sidebar.text_input("輸入管理者密碼", type="password")
-    if password != "admin123":
+    if password != "20040815":
         st.warning("密碼錯誤")
         st.stop()
     st.success("管理者登入成功")
