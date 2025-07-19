@@ -1,19 +1,9 @@
 import streamlit as st
 import pandas as pd
 import io
-# ➕ 輸出個人報告 Excel
-        report_buffer = io.BytesIO()
-        df.to_excel(report_buffer, index=False, engine='openpyxl')
-        st.download_button(
-            label="⬇️ 下載此筆個人報告 (Excel)",
-            data=report_buffer.getvalue(),
-            file_name=f"個人報告_{date.today()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-        from fpdf import FPDF
 import os
 from datetime import date
+from fpdf import FPDF
 
 st.set_page_config("血液透析研究收案系統", layout="wide")
 st.title("📝 血液透析病人研究收案系統")
@@ -37,7 +27,12 @@ if mode == "管理者後台":
         st.dataframe(df, use_container_width=True)
         excel_buffer = io.BytesIO()
         df.to_excel(excel_buffer, index=False, engine='openpyxl')
-        
+        st.download_button(
+            label="⬇️ 下載所有資料 (Excel)",
+            data=excel_buffer.getvalue(),
+            file_name="dialysis_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
     else:
         st.info("尚無資料")
     st.stop()
@@ -123,7 +118,12 @@ with st.form("intake_form"):
         # ➕ 輸出個人報告 Excel
         report_buffer = io.BytesIO()
         df.to_excel(report_buffer, index=False, engine='openpyxl')
-        from fpdf import FPDF
+        st.download_button(
+            label="⬇️ 下載此筆個人報告 (Excel)",
+            data=report_buffer.getvalue(),
+            file_name=f"個人報告_{date.today()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
         # ➕ 輸出 PDF 報告
         class PDF(FPDF):
