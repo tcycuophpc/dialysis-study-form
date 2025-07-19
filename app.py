@@ -1,6 +1,17 @@
 import streamlit as st
 import pandas as pd
 import io
+# ➕ 輸出個人報告 Excel
+        report_buffer = io.BytesIO()
+        df.to_excel(report_buffer, index=False, engine='openpyxl')
+        st.download_button(
+            label="⬇️ 下載此筆個人報告 (Excel)",
+            data=report_buffer.getvalue(),
+            file_name=f"個人報告_{date.today()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        from fpdf import FPDF
 import os
 from datetime import date
 
@@ -26,8 +37,7 @@ if mode == "管理者後台":
         st.dataframe(df, use_container_width=True)
         excel_buffer = io.BytesIO()
         df.to_excel(excel_buffer, index=False, engine='openpyxl')
-        st.download_button("⬇️ 下載所有資料 (Excel)", data=excel_buffer.getvalue(), file_name="dialysis_data.xlsx")
-        st.download_button("⬇️ 下載所有資料 (Excel)", data=df.to_excel(index=False, engine='openpyxl'), file_name="dialysis_data.xlsx").encode("utf-8-sig"), "dialysis_data.csv")
+        
     else:
         st.info("尚無資料")
     st.stop()
@@ -109,3 +119,30 @@ with st.form("intake_form"):
         df = pd.DataFrame([record])
         df.to_csv(DATA_FILE, mode='a', index=False, header=not os.path.getsize(DATA_FILE))
         st.success("✅ 資料已成功儲存！")
+
+        # ➕ 輸出個人報告 Excel
+        report_buffer = io.BytesIO()
+        df.to_excel(report_buffer, index=False, engine='openpyxl')
+        from fpdf import FPDF
+
+        # ➕ 輸出 PDF 報告
+        class PDF(FPDF):
+            def header(self):
+                self.set_font("Arial", 'B', 12)
+                self.cell(0, 10, "血液透析個人健康報告", ln=True, align="C")
+                self.ln(10)
+
+        pdf = PDF()
+        pdf.add_page()
+        pdf.set_font("Arial", '', 11)
+        for key, value in record.items():
+            pdf.cell(0, 10, f"{key}: {value}", ln=True)
+
+        pdf_buffer = io.BytesIO()
+        pdf.output(pdf_buffer)
+        st.download_button(
+            label="⬇️ 下載此筆個人報告 (PDF)",
+            data=pdf_buffer.getvalue(),
+            file_name=f"個人報告_{date.today()}.pdf",
+            mime="application/pdf"
+        )
